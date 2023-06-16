@@ -22,20 +22,11 @@ class MyBot(commands.Bot):
             self.tree.copy_global_to(guild=guild)
         await self.tree.sync()
 
-intents = discord.Intents.default()
+bot = MyBot(intents=discord.Intents.default())
 
-bot = MyBot(intents=intents)
-
-# bot.add_cog(Miscellaneous(bot))
-
-@bot.tree.command(name="hello", description="Test command which says hello!")
-async def hello(interaction: discord.Interaction):
-    await interaction.response.send_message("Hello there!")
-
-@bot.tree.command(name="konata", description="Sends a random konata image.")
-async def konata(interaction: discord.Interaction):
-    page = random.randint(1, 29)
-    url = f"https://konachan.net/post.json?page={page}&tags=izumi_konata"
+async def get_image(tags: str, page_max: int = 1):
+    page = random.randint(1, page_max)
+    url = f"https://konachan.net/post.json?page={page}&tags={tags}"
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -47,9 +38,26 @@ async def konata(interaction: discord.Interaction):
                 result.remove(post)
 
         image_url = random.choice(result)["file_url"]
-        await interaction.response.send_message(image_url)
+        return image_url
     
     except Exception as e:
-        await interaction.response.send_message(f"Sorry, something went wrong. Tell weirdcease#0001: `{e}`")
+        return f"Sorry, something went wrong. Tell weirdcease: `{e}`"
+
+@bot.tree.command(name="hello", description="Test command which says hello!")
+async def hello(interaction: discord.Interaction):
+    await interaction.response.send_message("Hi Sky!")
+
+# @bot.tree.command(name="image", description="Sends a random image from konachan.net based on the tags given.")
+# async def image(interaction: discord.Interaction, )
+
+@bot.tree.command(name="konata", description="Sends a random Konata Izumi image.")
+async def konata(interaction: discord.Interaction):
+    image_url = await get_image("izumi_konata", 29)
+    await interaction.response.send_message(image_url)
+    
+@bot.tree.command(name="miku", description="Sends a random Hatsune Miku image.")
+async def miku(interaction: discord.Interaction):
+    image_url = await get_image("hatsune_miku", 652)
+    await interaction.response.send_message(image_url)
 
 bot.run(TOKEN)
